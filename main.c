@@ -94,6 +94,7 @@ void Arrowhead(HDC hdc, int x1, int y1, int x2, int y2){
     Line(hdc, x2, y2, rx, ry);
 }
 
+//Функция рисования стрелы
 void Arrow(HDC hdc, int x1, int y1, int x2, int y2){
     double fi, dx, dy;
     int px, py;
@@ -134,13 +135,21 @@ void Arrow(HDC hdc, int x1, int y1, int x2, int y2){
 
 //Функция рисования ломаной стрелки
 void Broken_arrow(HDC hdc, int x1, int y1, int x2, int y2){
+    int x, y, dx, dy, mid_x, mid_y;
+    x = fabs(x1 - x2);
+    y = fabs(y1 - y2);
     if (x1 == x2){
-        Arrow(hdc, x1, y1, x2, y2);
+        dy = y / 2;
+        dx = tan(beta/2) * dy;
+        if(y1 < y2){
+            mid_y = y1 + dy;
+            mid_x = x1 + dx;
+        } else{
+            mid_y = y1 - dy;
+            mid_x = x1 - dx;
+        }
     } else if (x1 != x2){
-        int x, y, dx, dy, mid_x, mid_y;
         double alpha, fi;
-        x = fabs(x1 - x2);
-        y = fabs(y1 - y2);
         alpha = atan(y / x);
         dx = x / 2;
         if (y1 != y2){
@@ -162,7 +171,7 @@ void Broken_arrow(HDC hdc, int x1, int y1, int x2, int y2){
                 }
             }
         } else{
-            dy = tan(beta) * dx;
+            dy = tan(beta/2) * dx;
             if (x1 < x2){
                 mid_x = x1 + dx;
                 mid_y = y1 + dy;
@@ -171,9 +180,9 @@ void Broken_arrow(HDC hdc, int x1, int y1, int x2, int y2){
                 mid_y = y1 - dy;
             }
         }
-        Line(hdc, x1, y1, mid_x, mid_y);
-        Arrow(hdc, mid_x, mid_y, x2, y2);
     }
+    Line(hdc, x1, y1, mid_x, mid_y);
+    Arrow(hdc, mid_x, mid_y, x2, y2);
 }
 
 //Функция рисования ломаной стрелки-петли
