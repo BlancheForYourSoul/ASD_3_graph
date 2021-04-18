@@ -3,11 +3,11 @@
 #include<math.h>
 
 #define n 10
-#define pi 3.14159
 #define half_edge 120
 #define edge 240
 #define height 200
 #define d 15
+#define beta 0.4
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 char szProgName[]="Имя программы";
@@ -133,21 +133,46 @@ void Arrow(HDC hdc, int x1, int y1, int x2, int y2){
 }
 
 //Функция рисования ломаной стрелки
-void Edge_Break(HDC hdc, int x1, int y1, int x2, int y2){
-    int x, y, px, py;
-    double fi, alpha, dx, dy;
-    if(x1 != x2){
-        if (y1 != y2){
-            x = (x1 + x2) / 2;
-            y = (y1 + y2) / 4;
-        } else{
-            x = (x1 + x2)/2;
-            y = y1 + (x2 - x)*tan(0.3);
-        }
-        Line(hdc, x1, y1, x, y);
-        Arrow(hdc, x, y, x2, y2);
-    } else{
+void Broken_arrow(HDC hdc, int x1, int y1, int x2, int y2){
+    if (x1 == x2){
         Arrow(hdc, x1, y1, x2, y2);
+    } else if (x1 != x2){
+        int x, y, dx, dy, mid_x, mid_y;
+        double alpha, fi;
+        x = fabs(x1 - x2);
+        y = fabs(y1 - y2);
+        alpha = atan(y / x);
+        dx = x / 2;
+        if (y1 != y2){
+            fi = alpha + beta;
+            dy = tan(fi) * dx;
+            if (x1 < x2) {
+                mid_x = x1 + dx;
+                if (y1 > y2) {
+                    mid_y = y1 - dy;
+                } else {
+                    mid_y = y1 + dy;
+                }
+            } else {
+                mid_x = x1 - x / 2;
+                if (y1 > y2) {
+                    mid_y = y1 - dy;
+                } else {
+                    mid_y = y1 + dy;
+                }
+            }
+        } else{
+            dy = tan(beta) * dx;
+            if (x1 < x2){
+                mid_x = x1 + dx;
+                mid_y = y1 + dy;
+            } else {
+                mid_x = x1 - dx;
+                mid_y = y1 - dy;
+            }
+        }
+        Line(hdc, x1, y1, mid_x, mid_y);
+        Arrow(hdc, mid_x, mid_y, x2, y2);
     }
 }
 
@@ -166,11 +191,6 @@ void Loop(HDC hdc, int x0, int y0){
     LineTo(hdc, x2, y2);
     LineTo(hdc, x3, y3);
     Arrowhead(hdc, x2, y2, x3, y3);
-}
-
-//Функция проверки длины ребра
-int edge_length(int x1, int y1, int x2, int y2){
-    return ceil(sqrt(pow(x1-x2, 2) + pow(y1-y2, 2)));
 }
 
 //Функция окна
@@ -225,6 +245,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     {0, 0, 1, 0, 1, 1, 1, 0, 0, 0}
             };
 
+            HPEN pen1 = CreatePen(PS_SOLID, 1, RGB(132, 56, 214));
+            HPEN pen2 = CreatePen(PS_SOLID, 2, RGB(255, 82, 252));
+            HPEN pen3 = CreatePen(PS_SOLID, 2, RGB(71, 214, 222));
+            HPEN pen4 = CreatePen(PS_SOLID, 1, RGB(247, 143, 52));
             hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
             SelectObject(hdc, hPen);
 
@@ -232,9 +256,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 for(int j = 0; j < n; j++){
                     if(A[i][j] == 1){
                         if(i == j){
+                            SelectObject(hdc, hPen);
                             Loop(hdc, A_cords[i][0], A_cords[i][1]);
-                        } else{
-                            Edge_Break(hdc, A_cords[i][0], A_cords[i][1], A_cords[j][0], A_cords[j][1]);
+                        } else if (A_cords[i][1] == A_cords[j][1] && fabs(A_cords[i][0]-A_cords[j][0]) != edge){
+                            SelectObject(hdc, pen1);
+                            Broken_arrow(hdc, A_cords[i][0], A_cords[i][1], A_cords[j][0], A_cords[j][1]);
+                        } else if (A[j][i] == 1){
+                            SelectObject(hdc, pen2);
+                            Broken_arrow(hdc, A_cords[i][0], A_cords[i][1], A_cords[j][0], A_cords[j][1]);
+                        } else if (fabs(A_cords[i][0]-A_cords[j][0]) == edge && fabs(A_cords[i][1]-A_cords[j][1]) > height){
+                            SelectObject(hdc, pen3);
+                            Broken_arrow(hdc, A_cords[i][0], A_cords[i][1], A_cords[j][0], A_cords[j][1]);
+                        } else if (fabs(A_cords[i][0]-A_cords[j][0]) == half_edge*3 && fabs(A_cords[i][1]-A_cords[j][1]) > height){
+                            SelectObject(hdc, pen4);
+                            Broken_arrow(hdc, A_cords[i][0], A_cords[i][1], A_cords[j][0], A_cords[j][1]);
+                        } else {
+                            //normal
+                            SelectObject(hdc, hPen);
+                            Arrow(hdc, A_cords[i][0], A_cords[i][1], A_cords[j][0], A_cords[j][1]);
                         }
                     }
                 }
